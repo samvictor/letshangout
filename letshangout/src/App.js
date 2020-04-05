@@ -87,6 +87,11 @@ async function public_signin() {
 let data_fetched = false;
 let todo_list = [];
 
+let log_test1 = () => {
+  //console.log(test, 'log 1');
+};
+
+
 function App() {
   // using updater to avoid race conditions involved with using state
   // with the subscriptions in useEffect, it uses only the initial value of states
@@ -123,7 +128,11 @@ function App() {
   useEffect(() => {
     console.log('todo list updated', todo_list);
     console.log('test from todo effect', test);
-  }, [todo_list])
+  }, [todo_list]);
+
+  let log_test2 = () => {
+    console.log(test, 'test2');
+  }
 
   useEffect(() => {
     // set up subscriptions for any changes in data
@@ -142,10 +151,14 @@ function App() {
           console.log(todo_list.concat(new_todo), 'should be new list')
           todo_list = todo_list.concat(new_todo);
           //set_todo_list_updater(todo_list_updater => todo_list_updater + 1);
+          // this is probably taking the current value of state and modifying it
           set_todo_list_state(todo_list_state => todo_list_state.concat(new_todo));
           console.log(new_todo, 'create');
           let return_me = (val) => val;
           console.log(return_me(todo_list_state), 'todo list state');
+          log_test1();
+          log_test2();
+
         }
       });
 
