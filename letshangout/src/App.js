@@ -20,14 +20,7 @@ async function public_signin() {
             user.challengeName === 'SOFTWARE_TOKEN_MFA') {
             // You need to get the code from the UI inputs
             // and then trigger the following function with a button click
-            //const code = getCodeFromUserInput();
             console.log('get code from user');
-            // If MFA is enabled, sign-in should be confirmed with the confirmation code
-            //const loggedUser = await Auth.confirmSignIn(
-            ///    user,   // Return object from Auth.signIn()
-            //    code,   // Confirmation code
-            //    mfaType // MFA Type e.g. SMS_MFA, SOFTWARE_TOKEN_MFA
-            //);
         } else if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
             const {requiredAttributes} = user.challengeParam; // the array of required attributes, e.g ['email', 'phone_number']
             // You need to get the new password and required attributes from the UI inputs
@@ -35,16 +28,6 @@ async function public_signin() {
             // For example, the email and phone_number are required attributes
 
             console.log('new password');
-            //const {username, email, phone_number} = getInfoFromUserInput();
-            //const loggedUser = await Auth.completeNewPassword(
-            //     user,              // the Cognito User Object
-            //     newPassword,       // the new password
-            //     // OPTIONAL, the required attributes
-            //     {
-            //         email,
-            //         phone_number,
-            //     }
-            // );
         } else if (user.challengeName === 'MFA_SETUP') {
             // This happens when the MFA method is TOTP
             // The user needs to setup the TOTP before using it
@@ -75,32 +58,31 @@ async function public_signin() {
         }
     }
 }
-// For advanced usage
-// You can pass an object which has the username, password and validationData which is sent to a PreAuthentication Lambda trigger
-// Auth.signIn({
-//     username, // Required, the username
-//     password, // Optional, the password
-//     validationData, // Optional, a random key-value pair map which can contain any key and will be passed to your PreAuthentication Lambda trigger as-is. It can be used to implement additional validations around authentication
-// }).then(user => console.log(user))
-// .catch(err => console.log(err));
 
-let data_fetched = false;
-let todo_list = [];
 
-let log_test1 = () => {
-  //console.log(test, 'log 1');
+const update_todo = (todo_id) => {
+  console.log('updating', todo_id);
+  API.graphql(graphqlOperation(mutations.updateTodo, {input: {
+    id: todo_id,
+    //name: 'update' + ++counter,
+    description: 'update number ' + counter++,
+  }}));
+};
+
+const delete_todo = (todo_id) => {
+  console.log('deleting', todo_id);
+  API.graphql(graphqlOperation(mutations.deleteTodo, {input: {
+    id: todo_id
+  }}));
 };
 
 
-function App() {
-  // using updater to avoid race conditions involved with using state
-  // with the subscriptions in useEffect, it uses only the initial value of states
-  const [todo_list_updater, set_todo_list_updater] = useState(0);
-  let [test, set_test] = useState('first');
-  const [todo_list_state, set_todo_list_state] = useState([]);
+let data_fetched = false;
+let counter = 0;
 
-  let local_todo = [];
-  let test_local = 'first';
+
+function App() {
+  const [todo_list_state, set_todo_list_state] = useState([]);
 
   useEffect(() => {
     public_signin();
@@ -113,26 +95,10 @@ function App() {
       API.graphql(graphqlOperation(queries.listTodos))
         .then((from_server) => {
           console.log('from server', from_server)
-          todo_list = from_server.data.listTodos.items;
-          //set_todo_list_updater(todo_list_updater + 1);
-          local_todo = from_server.data.listTodos.items;
           set_todo_list_state(from_server.data.listTodos.items);
-          set_test('fetch')
-          test_local = 'fetch';
-          console.log('doing fetch')
-
         });
     }
   }, []);
-
-  useEffect(() => {
-    console.log('todo list updated', todo_list);
-    console.log('test from todo effect', test);
-  }, [todo_list]);
-
-  let log_test2 = () => {
-    console.log(test, 'test2');
-  }
 
   useEffect(() => {
     // set up subscriptions for any changes in data
@@ -141,23 +107,11 @@ function App() {
     const todo_create_sub = API.graphql(graphqlOperation(subscriptions.onCreateTodo))
       .subscribe({
         next: (todoData) => {
-          let test_state_fn = test => test + ' ';
-          let test_state = test_state_fn();
-          console.log(local_todo, 'local todo');
           const new_todo = todoData.value.data.onCreateTodo;
-          console.log(test_state, 'test');
-          console.log(test_local, 'test local')
-          console.log(todo_list, 'old todo list');
-          console.log(todo_list.concat(new_todo), 'should be new list')
-          todo_list = todo_list.concat(new_todo);
-          //set_todo_list_updater(todo_list_updater => todo_list_updater + 1);
           // this is probably taking the current value of state and modifying it
+          // we need to pass a function to avoid race condition
           set_todo_list_state(todo_list_state => todo_list_state.concat(new_todo));
           console.log(new_todo, 'create');
-          let return_me = (val) => val;
-          console.log(return_me(todo_list_state), 'todo list state');
-          log_test1();
-          log_test2();
 
         }
       });
@@ -165,14 +119,38 @@ function App() {
     const todo_update_sub = API.graphql(graphqlOperation(subscriptions.onUpdateTodo))
       .subscribe({
         next: (todoData) => {
-          console.log(todoData, 'update');
+          const updated_todo = todoData.value.data.onUpdateTodo;
+          console.log(updated_todo, 'update');
+          
+          set_todo_list_state(todo_list_state => {
+            // search list for id and update when id matches updated todo id
+            const clone_todo_list = [...todo_list_state]; // clone
+            clone_todo_list.forEach((todo={}, i) => {
+              if (todo.id === updated_todo.id)
+                clone_todo_list[i] = updated_todo;
+            });
+            
+            return clone_todo_list;
+          });
         }
       });
 
     const todo_delete_sub = API.graphql(graphqlOperation(subscriptions.onDeleteTodo))
       .subscribe({
         next: (todoData) => {
-          console.log(todoData, 'delete');
+          const deleted_todo = todoData.value.data.onDeleteTodo;
+          console.log(deleted_todo, 'delete');
+          
+          set_todo_list_state(todo_list_state => {
+            // search list for id and remove
+            const clone_todo_list = [...todo_list_state]; // clone
+            clone_todo_list.forEach((todo={}, i) => {
+              if (todo.id === deleted_todo.id)
+                clone_todo_list.splice(i, 1);
+            });
+            
+            return clone_todo_list;
+          });
         }
       });
 
@@ -192,8 +170,9 @@ function App() {
       },
     };
 
-    const newTodo = await API.graphql(graphqlOperation(mutations.createTodo, todoDetails));
-    alert(JSON.stringify(newTodo));
+    //const newTodo = await API.graphql(graphqlOperation(mutations.createTodo, todoDetails));
+    API.graphql(graphqlOperation(mutations.createTodo, todoDetails));
+    //alert(JSON.stringify(newTodo));
   };
 
   const listQuery = async () => {
@@ -203,13 +182,17 @@ function App() {
   };
 
   const todo_xml = [];
-  todo_list_state.forEach((todo_from_state) => {
-    todo_xml.push(
-      <div>
-        <h4>{todo_from_state.name}</h4>
-        <t>{todo_from_state.description}</t>
-      </div>
-    );
+  todo_list_state.forEach((todo_from_state={}) => {
+    if (todo_from_state.id)
+      todo_xml.push(
+        <div>
+          <h4>{todo_from_state.name}</h4>
+          <div>{todo_from_state.description}</div>
+          <sub>{todo_from_state.id}</sub>
+          <button onClick={update_todo.bind(this, todo_from_state.id)}>update</button>
+          <button onClick={delete_todo.bind(this, todo_from_state.id)}>delete</button>
+        </div>
+      );
   });
 
 
