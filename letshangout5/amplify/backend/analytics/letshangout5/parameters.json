@@ -1,0 +1,21 @@
+{
+    "appName": "letshangout5",
+    "roleName": "pinpointLambdaRole12d59c4e",
+    "cloudformationPolicyName": "cloudformationPolicy12d59c4e",
+    "cloudWatchPolicyName": "cloudWatchPolicy12d59c4e",
+    "pinpointPolicyName": "pinpointPolicy12d59c4e",
+    "authPolicyName": "pinpoint_amplify_12d59c4e",
+    "unauthPolicyName": "pinpoint_amplify_12d59c4e",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}

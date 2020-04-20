@@ -1,0 +1,31 @@
+{
+    "hangfive": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-letshangout5-hangfive-80421-authRole",
+            "UnauthRoleArn": "arn:aws:iam::959381368864:role/amplify-letshangout5-hangfive-80421-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::959381368864:role/amplify-letshangout5-hangfive-80421-authRole",
+            "Region": "us-east-1",
+            "DeploymentBucketName": "amplify-letshangout5-hangfive-80421-deployment",
+            "UnauthRoleName": "amplify-letshangout5-hangfive-80421-unauthRole",
+            "StackName": "amplify-letshangout5-hangfive-80421",
+            "StackId": "arn:aws:cloudformation:us-east-1:959381368864:stack/amplify-letshangout5-hangfive-80421/611cb6d0-8214-11ea-bcad-0a39c55408a9",
+            "AmplifyAppId": "d2hdgzubrlsppq"
+        },
+        "categories": {
+            "function": {
+                "letshangout571763dfbPostConfirmation": {
+                    "GROUP": "users"
+                }
+            },
+            "auth": {
+                "letshangout571763dfb": {}
+            },
+            "hosting": {
+                "amplifyhosting": {
+                    "appId": "d2hdgzubrlsppq",
+                    "type": "manual"
+                }
+            }
+        }
+    }
+}

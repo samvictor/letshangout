@@ -1,0 +1,16 @@
+{
+    "trigger": true,
+    "modules": [
+        "add-to-group"
+    ],
+    "parentResource": "letshangout571763dfb",
+    "functionName": "letshangout571763dfbPostConfirmation",
+    "resourceName": "letshangout571763dfbPostConfirmation",
+    "parentStack": "auth",
+    "triggerEnvs": [],
+    "triggerDir": "/home/ec2-user/.nvm/versions/node/v10.19.0/lib/node_modules/@aws-amplify/cli/node_modules/amplify-category-auth/provider-utils/awscloudformation/utils/../triggers/PostConfirmation",
+    "triggerTemplate": "PostConfirmation.json.ejs",
+    "roleName": "letshangout571763dfbPostConfirmation",
+    "skipEdit": true,
+    "GROUP": "users"
+}
