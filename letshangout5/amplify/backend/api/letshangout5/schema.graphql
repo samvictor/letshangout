@@ -6,3 +6,93 @@ type Todo @model @auth(rules: [
   name: String!
   description: String
 }
+
+
+type Post @model 
+@auth(rules: [
+  # Defaults to use the "owner" field.
+  { allow: owner, operations: [create, update, delete] },
+]) 
+{
+  id: ID!
+  title: String!
+  content: String!
+  hidden: Boolean
+  comments: [Comment] @connection(name: "PostComments")
+  author: User @connection(name: "UserPosts")
+  posted: AWSDateTime! # Use (new Date()).toISOString() to get datetime
+  owner: String
+}
+type Comment @model 
+@auth(rules: [
+  # Defaults to use the "owner" field.
+  { allow: owner, operations: [create, update, delete] },
+]) 
+{
+  id: ID!
+  content: String
+  post: Post @connection(name: "PostComments")
+  author: User @connection(name: "UserComments")
+}
+
+type User @model
+@auth(rules: [
+  { allow: owner, operations: [create, update, delete] },
+]) 
+{
+  id: ID!
+  name: String!
+  description: String
+  posts: [Post] @connection(name: "UserPosts")
+  comments: [Comment] @connection(name: "UserComments")
+  calendarEntries: [CalendarEntry] @connection(name: "UserCalendarEntry")
+  privateData: UserPrivateData @connection(name: "UserPrivateData")
+}
+
+type UserPrivateData @model
+@auth(rules: [
+  { allow: owner},
+]) 
+{
+  id: ID!
+  email: String #just an example
+  user: User @connection(name: "UserPrivateData")
+}
+
+type CalendarEntry @model
+@auth(rules: [
+  { allow: owner, operations: [create, update, delete] },
+]) 
+{
+  id: ID!
+  # dates and times in unix epoch ms format
+  startDate: Int!
+  endDate: Int
+  repeating: CalendarRepeatingType!
+  # on what days of the week is this event repeated? 1=sunday, 7 = saturday
+  repeatingDays: [Int]
+  # on what dates of the month is this event repeated? 1=1st, 30=30th
+  repeatingDates: [Int]
+  ownerDetails: User @connection(name: "UserCalendarEntry")
+  privateData: CalendarEntryPrivateData @connection(name: "CalendarEntryPrivateData")
+}
+
+type CalendarEntryPrivateData @model
+@auth(rules: [
+  { allow: owner },
+]) 
+{
+  id: ID!
+  # only owner can read name and description
+  name: String
+  description: String
+  calendarEntry: CalendarEntry @connection(name: "CalendarEntryPrivateData")
+}
+
+
+enum CalendarRepeatingType {
+  NONE
+  DAY
+  DATE
+}
+  

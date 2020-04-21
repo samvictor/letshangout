@@ -46,3 +46,8 @@ button {
   border-width: 1px;
   cursor: pointer;
 }
+
+.post_container {
+  border: solid 1px black;
+  border-radius: 6px;
+}
