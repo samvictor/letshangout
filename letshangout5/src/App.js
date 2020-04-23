@@ -10,8 +10,8 @@ import {
   useHistory,
 } from "react-router-dom";
 
-import { createPost } from './graphql/mutations';
-import {  listPosts } from './graphql/queries';
+import { createPost, createUser } from './graphql/mutations';
+import {  listPosts, listUsers, listCalendarEntrys } from './graphql/queries';
 import { onCreatePost } from './graphql/subscriptions';
 import API, { graphqlOperation } from '@aws-amplify/api';
 import PubSub from '@aws-amplify/pubsub';
@@ -53,8 +53,8 @@ async function createSamplePosts() {
 
 function Home() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [current_user, set_current_user] = useState(null);
-  //let current_user = null;
+  const [logged_in_user, set_logged_in_user] = useState(null);
+  //let logged_in_user = null;
   
   useEffect(() => {
     // effect for tracking signin
@@ -65,14 +65,16 @@ function Home() {
       
       // if no user, redirect to signin
       
-      set_current_user(user);
+      user.name = user['cognito:username'];
+      
+      set_logged_in_user(user);
     }
     check_for_user();
   }, []);
   
   useEffect(() => {
-    if (current_user ===  null) return;
-    // now we are guarenteed to have a current_user
+    if (logged_in_user ===  null) return;
+    // now we are guarenteed to have a logged_in_user
     
     async function getData() {
       const postData = await API.graphql(graphqlOperation(listPosts));
@@ -82,7 +84,7 @@ function Home() {
     getData();
     
     const subscription = API.graphql(graphqlOperation(onCreatePost, 
-                         {owner: current_user['cognito:username']})).subscribe({
+                         {owner: logged_in_user.name})).subscribe({
       next: (eventData) => {
         const post = eventData.value.data.onCreatePost;
         dispatch({ type: SUBSCRIPTION, post });
@@ -92,7 +94,7 @@ function Home() {
     
 
     return () => subscription.unsubscribe();
-  }, [current_user]);
+  }, [logged_in_user]);
 
   return (
     <div>
@@ -103,7 +105,7 @@ function Home() {
       </div>
       <div>
         {state.posts.length > 0 ? 
-          state.posts.map((post) => <div className="post_container">
+          state.posts.map((post) => <div className="post_container" key={post.id}>
             <sub>{post.id}</sub>
             <h3 key={post.id}>{post.title}</h3>  
             <p>{post.content}</p>
@@ -121,7 +123,7 @@ function Home() {
 }
 
 function App() {
-  const [current_user, set_current_user] = useState(null);
+  const [logged_in_user, set_logged_in_user] = useState(null);
   
   useEffect(() => {
     // effect for tracking signin
@@ -132,20 +134,43 @@ function App() {
       
       // if no user, redirect to signin
       
-      set_current_user(user);
+      user.name = user['cognito:username'];
+      set_logged_in_user(user);
+      
+      // after login, check if there is a user entry for this user in the db
+      // if not, create one. in the future, this should be done with lambda trigger
+      API.graphql(graphqlOperation(listUsers, {filter: {owner: {eq: user.name}}}))
+        .then(data => {
+          // if length is greater than 1, merge. 
+          // if length is 1, do nothing, 
+          // if length is 0, make a new entry
+          if (data.data.listUsers.items.length > 0)
+            return;
+            
+          API.graphql(graphqlOperation(createUser, {input: {
+            name: user.name,
+            description: 'I\'m here, let\'s hang out!',
+          }}))
+          .then(new_user => console.log('new user', new_user));
+          
+        });
     }
     check_for_user();
   }, []);
   
   let user_link = null;
-  if (current_user)
-    user_link = <Link to={"/user/"+current_user['cognito:username']}><button>{current_user['cognito:username']}</button></Link>;
+  let edit_cal_link = null;
+  if (logged_in_user) {
+    user_link = <Link to={"/user/"+logged_in_user.name}><button>{logged_in_user.name}</button></Link>;
+    edit_cal_link = <Link to="/editcalendar"><button>My Calendar</button></Link>;
+  }
     
   return (
     <Router>
       <div>
         <nav>
           <Link to="/"><button>Home</button></Link>
+          {edit_cal_link}
           {user_link}
         </nav>
 
@@ -157,6 +182,9 @@ function App() {
           </Route>
           <Route path="/createpost">
             <CreatePost />
+          </Route>
+          <Route path="/editcalendar">
+            <EditCalendar/>
           </Route>
           <Route path="/">
             <Home />
@@ -171,8 +199,10 @@ function App() {
 
 
 function User() {
-  const [current_user, set_current_user] = useState(null);
+  // in this case, logged_in_user is the currently logged in user
+  const [logged_in_user, set_logged_in_user] = useState(null);
   const [posts, set_posts] = useState([]);
+  const [user, set_user] = useState({});
   const {username} = useParams();
   
   useEffect(() => {
@@ -184,35 +214,45 @@ function User() {
       
       // if no user, redirect to signin
       
-      set_current_user(user);
+      user.name = user['cognito:username'];
+      
+      set_logged_in_user(user);
     }
     check_for_user();
   }, []);
   
   useEffect(() => {
-    if (current_user ===  null) return;
-    // now we are guarenteed to have a current_user
+    if (logged_in_user ===  null) return;
+    // now we are guarenteed to have a logged_in_user
     
     async function getData() {
       const postData = await API.graphql(graphqlOperation(listPosts, {filter: {owner: {eq: username}}}));
       set_posts(postData.data.listPosts.items);
-      console.log('data', postData.data.listPosts.items)
+      console.log('data', postData.data.listPosts.items);
+      
+      const user_data = await API.graphql(graphqlOperation(listUsers, {filter: {owner: {eq: username}}}));
+      console.log('user data', user_data);
+      if (user_data.data.listUsers.items.length > 0)
+        set_user(user_data.data.listUsers.items[0]);
     }
     getData();
     
-  }, [current_user, username]);
+    
+    
+  }, [logged_in_user, username]);
   
   
   return (
     <div>
       <h2>{username}</h2>
-      <div>description</div>
+      <div>{user.name}</div>
+      <div>{user.description}</div>
       <div>calendar</div>
       <div>edit calendar</div>
       <Link to="/createpost"><button>create post</button></Link>
       <div>
         {posts.length > 0 ? 
-          posts.map((post) => <div className="post_container">
+          posts.map((post) => <div className="post_container" key={post.id}>
             <sub>{post.id}</sub>
             <h3 key={post.id}>{post.title}</h3>  
             <p>{post.content}</p>
@@ -274,6 +314,142 @@ function CreatePost() {
       <textarea placeholder="Content" value={new_post_content} onChange={new_post_content_changed}/>
       <br/>
       <button onClick={create_post_confirm}>Post</button>
+    </div>  
+  );
+}
+
+
+// map number to text. eq. 1 -> Sun, 2 -> Mon
+const day_to_text = [ null,
+  {short: 'Sun', long: 'Sunday'},
+  {short: 'Mon', long: 'Monday'},
+  {short: 'Tue', long: 'Tuesday'},
+  {short: 'Wed', long: 'Wednesday'},
+  {short: 'Thu', long: 'Thursday'},
+  {short: 'Fri', long: 'Friday'},
+  {short: 'Sat', long: 'Saturday'},
+];
+function EditCalendar() {
+  let history = useHistory();
+  
+  
+  const [creating_freetime, set_creating_freetime] = useState({
+                                                      creating: false, 
+                                                      days_of_the_week: [],
+                                                    });
+  
+  const [logged_in_user, set_logged_in_user] = useState(null);
+  const [logged_in_user_calendar, set_logged_in_user_calendar] = useState(null);
+  const [calendar_entries, set_calendar_entries] = useState([]);
+  const [user, set_user] = useState({});
+  
+  useEffect(() => {
+    // effect for tracking signin
+    async function check_for_user() {
+      const user = await Auth.currentSession()
+      .then(data => {console.log('user', data.idToken.payload); return data.idToken.payload})
+      .catch(err => console.log(err));
+      
+      // if no user, redirect to signin
+      
+      set_logged_in_user(user);
+    }
+    check_for_user();
+  }, []);
+  
+  useEffect(() => {
+    // effect for loading data
+    if (logged_in_user ===  null) return;
+    // now we are guarenteed to have a logged_in_user
+    
+    async function getData() {
+      const calendar_entries = await API.graphql(graphqlOperation(listCalendarEntrys, {filter: {owner: {eq: logged_in_user.name}}}));
+      set_calendar_entries(calendar_entries.data.listCalendarEntrys.items);
+      console.log('data', calendar_entries.data.listCalendarEntrys.items);
+      
+      const user_data = await API.graphql(graphqlOperation(listUsers, {filter: {owner: {eq: logged_in_user.name}}}));
+      console.log('user data', user_data);
+      if (user_data.data.listUsers.items.length > 0)
+        set_user(user_data.data.listUsers.items[0]);
+    }
+    getData();
+    
+  }, [logged_in_user]);
+  
+  const create_post_confirm = async () => {
+    const post = null;
+    console.log('new post', await API.graphql(graphqlOperation(createPost, { input: post })));
+    // message -> posted
+    history.push('/');
+  };
+  
+  const new_freetime_clicked = () => {
+    set_creating_freetime({...creating_freetime, creating: true});
+  };
+  
+  
+  const [new_picker_days, set_new_picker_days] = useState([]);
+  
+  if (!logged_in_user) {
+    // no one logged in
+    return <div>Please login first</div>;
+  }
+  
+  // now there is guaranteed to be a user logged in
+  
+  let create_freetime = <div>
+    New Free Time
+    <button onClick={new_freetime_clicked}>+</button>
+  </div>;
+  
+  
+  const new_picker_day_clicked = (day_int) => {
+    if (new_picker_days.includes(day_int)) {
+      const temp_days_list = [...new_picker_days];
+      for( let i = temp_days_list.length - 1; i >= 0; i--){ 
+        if ( temp_days_list[i] === day_int) { 
+          temp_days_list.splice(i, 1); 
+        }
+        set_new_picker_days(temp_days_list);
+      }
+    }
+    else
+      set_new_picker_days([...new_picker_days, day_int]);
+  };
+  
+  if (creating_freetime.creating) {
+    const day_picker = [];
+    
+    for (let i = 1; i < 8; i++) {
+      day_picker.push(<div key={'newdaypicker'+i}  className='picker_day'
+          onClick={new_picker_day_clicked.bind(this, i)}>
+        {(new_picker_days.includes(i))  ?
+          <input type='checkbox' checked/> :
+          <input type='checkbox'/>}
+        {day_to_text[i].short}
+      </div>);
+    }
+    
+    console.log('picked days', new_picker_days);
+    
+    create_freetime = <div>
+      days of the week this applies to:
+      <div>{day_picker}</div>
+      Times:
+      start, end
+    </div>;
+  }  
+    
+  return (
+    <div>
+      <h2>Edit Calendar</h2>
+      <h4>When are you free?</h4>      
+      <div>list of free times</div>
+      {create_freetime}
+      <h4>Calendar</h4>
+      <div>calendar as it now stands, sun - sat</div>
+      <br/>
+      <button>Confirm</button>
     </div>  
   );
 }

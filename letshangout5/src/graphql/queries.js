@@ -206,6 +206,7 @@ export const getUser = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         nextToken
       }
@@ -351,10 +352,12 @@ export const getCalendarEntry = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         owner
       }
       owner
+      busy
     }
   }
 `;
@@ -385,6 +388,7 @@ export const listCalendarEntrys = /* GraphQL */ `
           owner
         }
         owner
+        busy
       }
       nextToken
     }
@@ -416,6 +420,7 @@ export const getCalendarEntryPrivateData = /* GraphQL */ `
           owner
         }
         owner
+        busy
       }
       owner
     }
@@ -444,6 +449,7 @@ export const listCalendarEntryPrivateDatas = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         owner
       }

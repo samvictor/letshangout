@@ -323,6 +323,7 @@ export const onCreateUser = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         nextToken
       }
@@ -375,6 +376,7 @@ export const onUpdateUser = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         nextToken
       }
@@ -427,6 +429,7 @@ export const onDeleteUser = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         nextToken
       }
@@ -573,10 +576,12 @@ export const onCreateCalendarEntry = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         owner
       }
       owner
+      busy
     }
   }
 `;
@@ -621,10 +626,12 @@ export const onUpdateCalendarEntry = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         owner
       }
       owner
+      busy
     }
   }
 `;
@@ -669,10 +676,12 @@ export const onDeleteCalendarEntry = /* GraphQL */ `
           repeatingDays
           repeatingDates
           owner
+          busy
         }
         owner
       }
       owner
+      busy
     }
   }
 `;
@@ -702,6 +711,7 @@ export const onCreateCalendarEntryPrivateData = /* GraphQL */ `
           owner
         }
         owner
+        busy
       }
       owner
     }
@@ -733,6 +743,7 @@ export const onUpdateCalendarEntryPrivateData = /* GraphQL */ `
           owner
         }
         owner
+        busy
       }
       owner
     }
@@ -764,6 +775,7 @@ export const onDeleteCalendarEntryPrivateData = /* GraphQL */ `
           owner
         }
         owner
+        busy
       }
       owner
     }

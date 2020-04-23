@@ -33,6 +33,7 @@ type Comment @model
   content: String
   post: Post @connection(name: "PostComments")
   author: User @connection(name: "UserComments")
+  owner: String
 }
 
 type User @model
@@ -47,6 +48,7 @@ type User @model
   comments: [Comment] @connection(name: "UserComments")
   calendarEntries: [CalendarEntry] @connection(name: "UserCalendarEntry")
   privateData: UserPrivateData @connection(name: "UserPrivateData")
+  owner: String
 }
 
 type UserPrivateData @model
@@ -57,6 +59,7 @@ type UserPrivateData @model
   id: ID!
   email: String #just an example
   user: User @connection(name: "UserPrivateData")
+  owner: String
 }
 
 type CalendarEntry @model
@@ -65,9 +68,11 @@ type CalendarEntry @model
 ]) 
 {
   id: ID!
-  # dates and times in unix epoch ms format
-  startDate: Int!
-  endDate: Int
+  # dates and times in AWSDateTime format
+  # Use (new Date()).toISOString() to get datetime
+  # for now only using the time component
+  startDate: AWSDateTime! 
+  endDate: AWSDateTime
   repeating: CalendarRepeatingType!
   # on what days of the week is this event repeated? 1=sunday, 7 = saturday
   repeatingDays: [Int]
@@ -75,6 +80,8 @@ type CalendarEntry @model
   repeatingDates: [Int]
   ownerDetails: User @connection(name: "UserCalendarEntry")
   privateData: CalendarEntryPrivateData @connection(name: "CalendarEntryPrivateData")
+  owner: String
+  busy: Boolean # are you busy during this time or free? default is free
 }
 
 type CalendarEntryPrivateData @model
@@ -87,6 +94,7 @@ type CalendarEntryPrivateData @model
   name: String
   description: String
   calendarEntry: CalendarEntry @connection(name: "CalendarEntryPrivateData")
+  owner: String
 }
 
 
