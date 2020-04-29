@@ -389,6 +389,10 @@ function EditCalendar() {
   
   
   const [new_picker_days, set_new_picker_days] = useState([]);
+  const [new_picker_times, set_new_picker_times] = useState({
+                                    start: {hour: 12, minute: 0, am: true}, 
+                                    end: {hour: 12, minute: 0, am: true}
+                                  });
   
   if (!logged_in_user) {
     // no one logged in
@@ -431,12 +435,39 @@ function EditCalendar() {
     }
     
     console.log('picked days', new_picker_days);
+    const handleChange = (event) => {
+      const temp_new_picker_times = {...new_picker_times};
+      
+      // formating for hours or minutes
+      let time_string = event.target.value.replace(/[^0-9]/g, "");
+      time_string = time_string.slice(-2);
+      
+      let time_int = parseInt(time_string);  
+      if (time_int > 12)
+        // if more than 12, remove first number. 36 -> 6
+        time_int = time_int % 10;
+      if (time_int < 1)
+        time_int = 1;
+        
+      temp_new_picker_times.start.hour = time_int;  
+      
+      set_new_picker_times(temp_new_picker_times);
+    };
     
     create_freetime = <div>
       days of the week this applies to:
       <div>{day_picker}</div>
       Times:
-      start, end
+      <br/>
+      <div style={{display:"inline-block", border: "solid 1px black"}}>
+        start
+        <input value={new_picker_times.start.hour} onChange={handleChange} /> 
+        : 
+        <input value={('0'+new_picker_times.start.minute).slice(-2)}/>
+      </div>
+      <div style={{ display:"inline-block", border: "solid 1px black"}}>
+        end
+      </div>  
     </div>;
   }  
     
