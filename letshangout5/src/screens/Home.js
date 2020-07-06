@@ -97,8 +97,10 @@ export default function Home() {
         {state.posts.length > 0 ? 
           state.posts.map((post) => <div className="post_container" key={post.id}>
             <sub>{post.id}</sub>
-            <h3 key={post.id}>{post.title}</h3>  
-            <p>{post.content}</p>
+            <Link to={'/post/'+post.id}>
+              <h3 key={post.id}>{post.title}</h3>  
+              <p>{post.content}</p>
+            </Link>
             <Link to={'/user/'+post.owner}><sub>{post.owner}</sub></Link>
             <p><sub>{JSON.stringify(post.author)}</sub></p>
             <p>{post.hidden}</p>

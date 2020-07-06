@@ -16,6 +16,8 @@ import { onCreatePost } from './graphql/subscriptions';
 import API, { graphqlOperation } from '@aws-amplify/api';
 import PubSub from '@aws-amplify/pubsub';
 
+
+import Post from './screens/Post';
 import User from './screens/User';
 import Home from './screens/Home';
 import CreatePost from './screens/CreatePost';
@@ -107,6 +109,9 @@ function App() {
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
         <Switch>
+          <Route path="/post/:post_id">
+            <Post />
+          </Route>
           <Route path="/user/:username">
             <User />
           </Route>
